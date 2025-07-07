@@ -1,12 +1,18 @@
-<h2>Stock: {{ ticker }}</h2>
+<!-- <h2>Stock: {{ ticker }}</h2>
+
+
 <h3>Closing Prices:</h3>
+<div>
+  {{ chart_div|safe }}
+</div>
+
 <ul>
   {% for row in prices %}
     <li>{{ row.Date }} : {{ row.Close }}</li>
   {% endfor %}
 </ul>
 
-
+<h2>AI Model Suggestion: {{ decision }}</h2>
 <h3>News Sentiment:</h3>
 <ul>
   {% for item in sentiments %}
@@ -17,4 +23,110 @@
   {% endfor %}
 </ul>
 
-<a href="/">Back</a>
+<a href="/">Back</a> -->
+
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ ticker }} • StockGuru</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Chart container gets soft shadow */
+    .chart-box { box-shadow: 0 0 15px rgba(0,0,0,.1); border-radius: .75rem; }
+  </style>
+</head>
+<body class="bg-light">
+
+  <nav class="navbar bg-primary navbar-dark">
+    <div class="container">
+      <a href="/" class="navbar-brand">← Back</a>
+      <span class="navbar-text fw-bold">{{ ticker }}</span>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+
+    {# 🔔 error दिखाना (rate‑limit आदि) #}
+    {% if error %}
+      <div class="alert alert-warning shadow-sm">{{ error }}</div>
+    {% endif %}
+
+    {# ⭐ AI Decision badge #}
+    {% if decision %}
+      {% if decision == "Buy" %}
+        {% set badge = "success" %}
+      {% elif decision == "Sell" %}
+        {% set badge = "danger" %}
+      {% else %}
+        {% set badge = "secondary" %}
+      {% endif %}
+      <h3 class="mb-3">
+        AI Suggestion:
+        <span class="badge bg-{{ badge }} px-3 py-2">{{ decision }}</span>
+      </h3>
+    {% endif %}
+
+    {# 📈 interactive chart #}
+    {% if chart_div %}
+      <div class="chart-box p-2 mb-4 bg-white">
+        {{ chart_div|safe }}
+      </div>
+    {% endif %}
+
+    {# 📰 Sentiment list #}
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Latest Headlines</h5>
+            {% if sentiments %}
+              <ul class="list-group list-group-flush">
+                {% for s in sentiments %}
+                  {% if s.score > 0 %}
+                    <li class="list-group-item text-success">{{ s.text }}</li>
+                  {% elif s.score < 0 %}
+                    <li class="list-group-item text-danger">{{ s.text }}</li>
+                  {% else %}
+                    <li class="list-group-item">{{ s.text }}</li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">No headlines found.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# 📋 Last‑10 close prices table #}
+      <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Last 10 Closing Prices</h5>
+            {% if prices %}
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>Date</th><th class="text-end">Close</th></tr>
+                </thead>
+                <tbody>
+                  {% for d, c in prices %}
+                    <tr>
+                      <td>{{ d|date:"d‑M‑Y" }}</td>
+                      <td class="text-end">{{ c|floatformat:2 }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p class="text-muted">Data unavailable.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
