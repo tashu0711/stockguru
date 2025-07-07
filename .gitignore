@@ -1,0 +1,20 @@
+# Byte‑compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Database
+db.sqlite3
+
+# Django static collect output
+/staticfiles/
+
+# Virtual environments (outer venv folder already outside repo, but safe)
+venv/
+env/
+
+# IDE / editor settings
+.vscode/
+.idea/
+
+# Logs
+*.log

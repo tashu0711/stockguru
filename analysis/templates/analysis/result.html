@@ -1,0 +1,20 @@
+<h2>Stock: {{ ticker }}</h2>
+<h3>Closing Prices:</h3>
+<ul>
+  {% for row in prices %}
+    <li>{{ row.Date }} : {{ row.Close }}</li>
+  {% endfor %}
+</ul>
+
+
+<h3>News Sentiment:</h3>
+<ul>
+  {% for item in sentiments %}
+    <li>
+      <strong>{{ item.text }}</strong><br>
+      Sentiment Score: {{ item.score }}
+    </li>
+  {% endfor %}
+</ul>
+
+<a href="/">Back</a>
