@@ -1,20 +1,28 @@
-# Byte‑compiled / cache files
+# Python cache
 __pycache__/
 *.py[cod]
+*.pyc
 
 # Database
 db.sqlite3
 
-# Django static collect output
-/staticfiles/
+# Environment variables (SECRET_KEY etc)
+.env
 
-# Virtual environments (outer venv folder already outside repo, but safe)
+# Virtual environment
 venv/
 env/
 
-# IDE / editor settings
+# IDE settings
 .vscode/
 .idea/
 
+# Static collected
+staticfiles/
+
 # Logs
 *.log
+
+# OS files
+.DS_Store
+Thumbs.db

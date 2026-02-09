@@ -55,16 +55,15 @@
 
     {# ⭐ AI Decision badge #}
     {% if decision %}
-      {% if decision == "Buy" %}
-        {% set badge = "success" %}
-      {% elif decision == "Sell" %}
-        {% set badge = "danger" %}
-      {% else %}
-        {% set badge = "secondary" %}
-      {% endif %}
       <h3 class="mb-3">
         AI Suggestion:
-        <span class="badge bg-{{ badge }} px-3 py-2">{{ decision }}</span>
+        {% if decision == "Buy" %}
+          <span class="badge bg-success px-3 py-2">{{ decision }}</span>
+        {% elif decision == "Sell" %}
+          <span class="badge bg-danger px-3 py-2">{{ decision }}</span>
+        {% else %}
+          <span class="badge bg-secondary px-3 py-2">{{ decision }}</span>
+        {% endif %}
       </h3>
     {% endif %}
 

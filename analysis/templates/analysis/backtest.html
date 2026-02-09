@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backtest - StockGuru</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    body { background: #f8f9fa; }
+    .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .btn-backtest {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      border: none;
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+      transition: transform 0.2s;
+    }
+    .btn-backtest:hover { transform: translateY(-2px); }
+    .stat-card {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-dark shadow-sm">
+    <div class="container">
+      <a href="{% url 'home' %}" class="navbar-brand fw-bold">
+        <i class="bi bi-graph-up-arrow"></i> StockGuru
+      </a>
+      <div class="d-flex flex-wrap">
+        <a href="{% url 'screener' %}" class="btn btn-sm btn-outline-light me-2 mb-2 mb-md-0">
+          <i class="bi bi-search"></i> Screener
+        </a>
+        <a href="{% url 'portfolio' %}" class="btn btn-sm btn-outline-light me-2 mb-2 mb-md-0">
+          <i class="bi bi-briefcase"></i> Portfolio
+        </a>
+        <a href="{% url 'backtest' %}" class="btn btn-sm btn-light mb-2 mb-md-0">
+          <i class="bi bi-clock-history"></i> Backtest
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">
+        <i class="bi bi-clock-history text-primary"></i> Strategy Backtest
+      </h2>
+      <p class="text-muted">Test strategy on 12 months historical data with monthly breakdown</p>
+    </div>
+
+    <form method="POST" id="backtestForm" class="text-center mb-5">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-lg btn-backtest text-white px-5 py-3" id="runBtn">
+        <i class="bi bi-play-circle"></i> Run 12-Month Backtest
+      </button>
+      <div id="loading" class="d-none mt-4">
+        <div class="spinner-border text-danger" style="width: 4rem; height: 4rem;"></div>
+        <p class="mt-3 text-muted fw-semibold">Running simulation... (~3-5 minutes)</p>
+      </div>
+    </form>
+
+    {% if error %}
+      <div class="alert alert-danger rounded-3">{{ error }}</div>
+    {% endif %}
+
+    {% if report %}
+      <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+          <div class="card stat-card text-white" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+            <div class="card-body text-center">
+              <i class="bi bi-list-check fs-1"></i>
+              <h6 class="mt-2">Total Trades</h6>
+              <h3>{{ report.total_trades }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card stat-card text-white" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+            <div class="card-body text-center">
+              <i class="bi bi-trophy fs-1"></i>
+              <h6 class="mt-2">Win Rate</h6>
+              <h3>{{ report.win_rate }}%</h3>
+              <small>{{ report.wins }}W / {{ report.losses }}L</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card stat-card text-white" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+            <div class="card-body text-center">
+              <i class="bi bi-percent fs-1"></i>
+              <h6 class="mt-2">Avg Return</h6>
+              <h3>{{ report.avg_return }}%</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card stat-card text-white" style="background: {% if report.profit >= 0 %}linear-gradient(135deg, #11998e, #38ef7d){% else %}linear-gradient(135deg, #eb3349, #f45c43){% endif %};">
+            <div class="card-body text-center">
+              <i class="bi bi-cash-stack fs-1"></i>
+              <h6 class="mt-2">Total Profit</h6>
+              <h3>₹{{ report.profit|floatformat:0 }}</h3>
+              <small>₹1L → ₹{{ report.final_capital|floatformat:0 }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info rounded-3 mb-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>Settings:</strong> {{ report.months }} months | Target: +{{ report.target_pct }}% | Max Hold: {{ report.max_hold_days }} days
+      </div>
+
+      <h4 class="mb-3"><i class="bi bi-calendar3"></i> Monthly Performance Breakdown</h4>
+      {% if report.monthly_breakdown %}
+        <div class="table-responsive mb-5">
+          <table class="table table-hover bg-white rounded">
+            <thead class="table-light">
+              <tr>
+                <th>Month</th>
+                <th><i class="bi bi-list-check"></i> Trades</th>
+                <th><i class="bi bi-trophy"></i> Win Rate</th>
+                <th>Wins/Losses</th>
+                <th><i class="bi bi-percent"></i> Avg Return</th>
+                <th><i class="bi bi-cash-stack"></i> Profit</th>
+                <th>Capital Start</th>
+                <th>Capital End</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for month in report.monthly_breakdown %}
+                <tr>
+                  <td class="fw-bold">{{ month.month }}</td>
+                  <td>{{ month.trades }}</td>
+                  <td>
+                    <span class="badge {% if month.win_rate >= 70 %}bg-success{% elif month.win_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                      {{ month.win_rate }}%
+                    </span>
+                  </td>
+                  <td>{{ month.wins }}W / {{ month.losses }}L</td>
+                  <td class="{% if month.avg_return >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                    {{ month.avg_return }}%
+                  </td>
+                  <td class="{% if month.profit >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                    ₹{{ month.profit|floatformat:0 }}
+                  </td>
+                  <td>₹{{ month.capital_start|floatformat:0 }}</td>
+                  <td class="fw-bold">₹{{ month.capital_end|floatformat:0 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr class="fw-bold">
+                <td>TOTAL</td>
+                <td>{{ report.total_trades }}</td>
+                <td>
+                  <span class="badge {% if report.win_rate >= 70 %}bg-success{% elif report.win_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                    {{ report.win_rate }}%
+                  </span>
+                </td>
+                <td>{{ report.wins }}W / {{ report.losses }}L</td>
+                <td class="{% if report.avg_return >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  {{ report.avg_return }}%
+                </td>
+                <td class="{% if report.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  ₹{{ report.profit|floatformat:0 }}
+                </td>
+                <td>₹1,00,000</td>
+                <td class="{% if report.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  ₹{{ report.final_capital|floatformat:0 }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% endif %}
+
+      <h4 class="mb-3"><i class="bi bi-list"></i> All Trades (Last 50)</h4>
+      <div class="table-responsive">
+        <table class="table table-hover bg-white rounded">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Stock</th>
+              <th>Buy</th>
+              <th>Exit</th>
+              <th>Return</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in report.trades|slice:":50" %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ t.date }}</td>
+                <td class="fw-bold">{{ t.ticker }}</td>
+                <td>₹{{ t.buy_price }}</td>
+                <td>₹{{ t.exit_price }}</td>
+                <td class="{% if t.return_pct >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                  {{ t.return_pct }}%
+                </td>
+                <td>
+                  {% if t.hit_target %}
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle"></i> Hit Target
+                    </span>
+                  {% elif t.return_pct >= 0 %}
+                    <span class="badge bg-info">Profit</span>
+                  {% else %}
+                    <span class="badge bg-danger">Loss</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert {% if report.win_rate >= 70 %}alert-success{% elif report.win_rate >= 50 %}alert-warning{% else %}alert-danger{% endif %} mt-4 rounded-3">
+        <h5><i class="bi bi-lightbulb"></i> Verdict:</h5>
+        {% if report.win_rate >= 70 %}
+          <p><strong>Strategy validated!</strong> {{ report.win_rate }}% win rate is excellent.</p>
+        {% elif report.win_rate >= 50 %}
+          <p><strong>Decent strategy.</strong> {{ report.win_rate }}% win rate is moderate.</p>
+        {% else %}
+          <p><strong>Needs improvement.</strong> {{ report.win_rate }}% win rate needs review.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    document.getElementById('backtestForm').addEventListener('submit', function() {
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('loading').classList.remove('d-none');
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

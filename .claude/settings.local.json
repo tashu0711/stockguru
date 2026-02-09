@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"d:\\\\drone-arena\\\\New folder\\\\stockguru\\\\venv\\\\Scripts\\\\python.exe\" \"d:\\\\drone-arena\\\\New folder\\\\stockguru\\\\manage.py\" check)",
+      "Bash(\"d:\\\\drone-arena\\\\New folder\\\\stockguru\\\\venv\\\\Scripts\\\\python.exe\" \"d:\\\\drone-arena\\\\New folder\\\\stockguru\\\\manage.py\" showmigrations)",
+      "Bash(\"d:\\\\drone-arena\\\\New folder\\\\stockguru\\\\venv\\\\Scripts\\\\python.exe\" --version)"
+    ]
+  }
+}
